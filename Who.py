@@ -91,15 +91,12 @@ class Who(APIConnection):
     self._endpoint = "http://evewho.com/api.php"
     self._cache = {}
     self._params = {}
-    self.info = None
-    self.history = None
+    self.data = None
     APIConnection.__init__(self)
 
   def __call__(self, _type, _arg, _var):
     params = {'type': _type, _arg: _var}
     if not params == self._params:
       self._params = params
-      r = self.get(self._endpoint, params)
-      self.info = r['info']
-      self.history = r['history']
-    return self.info
+      self.data = self.get(self._endpoint, params)
+    return self.data
