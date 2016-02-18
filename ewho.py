@@ -10,31 +10,31 @@ class APIException(Exception):
   pass
 
 class Cache(object):
-	def __init__(self):
-		self.dct = {}
+  def __init__(self):
+    self.dct = {}
 
-	def get(self, item):
-		return self.dct.get(item, None)
+  def get(self, item):
+    return self.dct.get(item, None)
 
-	def insert(self, item, value):
-		self.dct[item] = value
+  def insert(self, item, value):
+    self.dct[item] = value
 
-	def remove(self, item):
-		self.dct.pop(item, None)
+  def remove(self, item):
+    self.dct.pop(item, None)
 
 class APIConnection(object):
-	def __init__(self, add_headers=None, user_agent=None):
-		# Getting that sessions mhmm
+  def __init__(self, add_headers=None, user_agent=None):
+    # Getting that sessions mhmm
     ses = requests.Session()
-		if not headers:
-			headers = {}
-		if not user_agent:
-			user_agent = "PyIntel 0.1"
-		ses.headers.update({
-			"User-agent": user_agent,
-			"Accept": "application/json",
-		})
-		ses.headers.update(add_headers)
+    if not headers:
+      headers = {}
+    if not user_agent:
+      user_agent = "PyIntel 0.1"
+    ses.headers.update({
+      "User-agent": user_agent,
+      "Accept": "application/json",
+    })
+    ses.headers.update(add_headers)
     self._ses = ses
     self._cache = Cache()
   
