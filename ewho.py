@@ -85,11 +85,11 @@ class APIConnection(object):
     return 0
 
 class Who():
-	def __init__(self):
-		self._endpoint = 'http://evewho.com/api.php'
-		self.corplist = 
+  def __init__(self):
+    self._endpoint = 'http://evewho.com/api.php'
+    self.corplist = 
 
-	def query(self, ptype, match, var):
-		print(self.url % (ptype, match, var))
-		r = requests.get(self.url % (ptype, match, var))
-		return r.json()
+  def query(self, ptype, match, var):
+    print(self.url % (ptype, match, var))
+    r = requests.get(self.url % (ptype, match, var))
+    return r.json()
