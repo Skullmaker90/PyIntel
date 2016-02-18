@@ -2,6 +2,7 @@ import requests
 import logging
 import re
 import time
+from urlparse import urlparse, urlunparse, parse_qsl
 
 logger = logging.getLogger("PyIntel.Who")
 cache_re = re.compile(r'max-age=([0-0]+)')
@@ -26,8 +27,8 @@ class APIConnection(object):
   def __init__(self, add_headers=None, user_agent=None):
     # Getting that sessions mhmm
     ses = requests.Session()
-    if not headers:
-      headers = {}
+    if not add_headers:
+      add_headers = {}
     if not user_agent:
       user_agent = "PyIntel 0.1"
     ses.headers.update({
@@ -38,13 +39,13 @@ class APIConnection(object):
     self._ses = ses
     self._cache = Cache()
   
-  def chkCache(asset, params):
+  def chkCache(self, asset, params):
     key = (asset, frozenset(self._ses.headers.items()), frozenset(params.items()))
     cached = self._cache.get(key)
     if cached and cached['expires'] > time.time():
       logger.debug('Match for asset %s (params=%s)', asset, params)
       return cached['payload']
-    elif caches:
+    elif cached:
       logger.debug('Expired state for asset %s (params=%s)', asset, params)
       self._cache.remove(key)
     else:
@@ -75,21 +76,21 @@ class APIConnection(object):
     return res
 
   def _get_exp(self, response):
-    if not 'Cache-Control' in response.headers:
+    if 'Cache-Control' not in response.headers:
       return 0
     if any([s in response.headers['Cache-Control'] for s in ['no-cache', 'no-store']]):
       return 0
     match = cache_re.search(response.headers['Cache-Control'])
     if match:
-      returrn int(match.group(1))
+      return int(match.group(1))
     return 0
 
-class Who():
-  def __init__(self):
-    self._endpoint = 'http://evewho.com/api.php'
-    self.corplist = 
+#class Who():
+ # def __init__(self):
+  #  self._endpoint = 'http://evewho.com/api.php'
+   # self.corplist = 
 
-  def query(self, ptype, match, var):
-    print(self.url % (ptype, match, var))
-    r = requests.get(self.url % (ptype, match, var))
-    return r.json()
+  #def query(self, ptype, match, var):
+   # print(self.url % (ptype, match, var))
+    #r = requests.get(self.url % (ptype, match, var))
+    #return r.json()
