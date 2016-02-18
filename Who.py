@@ -55,11 +55,11 @@ class APIConnection(object):
     logger.debug('Recieve asset %s' % (asset))
     if not params:
       params = {}
-    prsd = urlparse(asset)
-    asset = urlunparse(prsd._replace(query=''))
-    qstr = prsd.query
+    parsed = urlparse(asset)
+    asset = urlunparse(parsed._replace(query=''))
+    qs = parsed.query
     _vars = {}
-    for tup in parse_qsl(qstr):
+    for tup in parse_qsl(qs):
       _vars[tup[0]] = tup[1]
     for key in params:
       _vars[key] = params[key]
