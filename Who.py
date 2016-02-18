@@ -5,7 +5,7 @@ import time
 from urlparse import urlparse, urlunparse, parse_qsl
 
 logger = logging.getLogger("PyIntel.Who")
-cache_re = re.compile(r'max-age=([0-0]+)')
+cache_re = re.compile(r'max-age=([0-9]+)')
 
 class APIException(Exception):
   pass
@@ -25,7 +25,6 @@ class Cache(object):
 
 class APIConnection(object):
   def __init__(self, add_headers=None, user_agent=None):
-    # Getting that sessions mhmm
     ses = requests.Session()
     if not add_headers:
       add_headers = {}
@@ -37,17 +36,19 @@ class APIConnection(object):
     })
     ses.headers.update(add_headers)
     self._ses = ses
-    self._cache = Cache()
+    self.cache = Cache()
   
   def chkCache(self, asset, params):
-    key = (asset, frozenset(self._ses.headers.items()), frozenset(params.items()))
-    cached = self._cache.get(key)
+    key = (asset, 
+        frozenset(self._ses.headers.items()), 
+        frozenset(params.items()))
+    cached = self.cache.get(key)
     if cached and cached['expires'] > time.time():
       logger.debug('Match for asset %s (params=%s)', asset, params)
       return cached['payload']
     elif cached:
       logger.debug('Expired state for asset %s (params=%s)', asset, params)
-      self._cache.remove(key)
+      self.cache.remove(key)
     else:
       logger.debug('Missing asset %s (params=%s)', asset, params)
 
@@ -72,7 +73,7 @@ class APIConnection(object):
     key = (asset, frozenset(self._ses.headers.items()), frozenset(_vars.items()))
     exp = self._get_exp(r)
     if exp > 0:
-      self._cache.insert(key, {'expires': time.time() + exp, 'payload': res})
+      self.cache.insert(key, {'expires': time.time() + exp, 'payload': res})
     return res
 
   def _get_exp(self, response):
@@ -85,12 +86,16 @@ class APIConnection(object):
       return int(match.group(1))
     return 0
 
-#class Who():
- # def __init__(self):
-  #  self._endpoint = 'http://evewho.com/api.php'
-   # self.corplist = 
+class Who(APIConnection):
+  def __init__(self):
+    self._endpoint = "http://evewho.com/api.php"
+    self._cache = {}
+    self._lastparams
+    self._data = None
+    APIConnection.__init__(self)
 
-  #def query(self, ptype, match, var):
-   # print(self.url % (ptype, match, var))
-    #r = requests.get(self.url % (ptype, match, var))
-    #return r.json()
+  def __call__(self, _type, _arg, _var):
+    params = {'type': _type, _arg: _var}
+    if not params == self._lastparams:
+      self._data = self.get(self._endpoint, params)
+    return self._data
