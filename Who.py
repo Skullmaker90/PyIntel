@@ -96,7 +96,7 @@ class Who(APIConnection):
 
   def __call__(self, _type, _arg, _var):
     params = {'type': _type, _arg: _var}
-    if not params == self._params:
+    if not (params == self._params):
       self._params = params
       self.data = self.get(self._endpoint, params)
     return self.data
