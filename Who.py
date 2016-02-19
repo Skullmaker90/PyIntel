@@ -94,9 +94,17 @@ class Who(APIConnection):
     self.data = None
     APIConnection.__init__(self)
 
-  def __call__(self, _type, _arg, _var):
-    params = {'type': _type, _arg: _var}
-    if not (params == self._params):
+  def __call__(self, _type, _arg, _var, page=None, force=None):
+    params = {'type': _type, _arg: _var, 'page': page}
+    if not (params == self._params and force is not True):
       self._params = params
       self.data = self.get(self._endpoint, params)
+      self._chkmem()
     return self.data
+
+  def _chkmem(self):
+    if self.data['info'].has_key('memberCount'):
+      for i in range(1, (int(self.data['info']['memberCount']) / 200 + 1)):
+        self._params['page'] = i
+        r = self.get(self._endpoint, self._params)
+        self.data['characters'] += r['characters']
