@@ -1,4 +1,5 @@
 import requests
+import threading
 import logging
 import re
 import time
@@ -91,6 +92,7 @@ class Who(APIConnection):
     self._endpoint = "http://evewho.com/api.php"
     self._cache = {}
     self._params = {}
+    self._threads = []
     self.data = None
     APIConnection.__init__(self)
 
@@ -98,6 +100,7 @@ class Who(APIConnection):
     params = {'type': _type, _arg: _var, 'page': page}
     if not (params == self._params and force is not True):
       self._params = params
+      t = WhoQ(self._endpoint, params)
       self.data = self.get(self._endpoint, params)
       self._chkmem()
     return self.data
@@ -108,3 +111,13 @@ class Who(APIConnection):
         self._params['page'] = i
         r = self.get(self._endpoint, self._params)
         self.data['characters'] += r['characters']
+
+class WhoQ(threading.Thread):
+  def __init__(self, uri, params):
+    threading.Thread.__init__(self)
+    self.uri = uri
+    self.params = params
+
+  def run(self):
+    r = APIConnection.get(self.uri, params)
+    return r
