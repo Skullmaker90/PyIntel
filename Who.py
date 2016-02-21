@@ -3,6 +3,7 @@ import threading
 import logging
 import re
 import time
+import multiprocessing
 from urlparse import urlparse, urlunparse, parse_qsl
 
 logger = logging.getLogger("PyIntel.Who")
@@ -87,37 +88,59 @@ class APIConnection(object):
       return int(match.group(1))
     return 0
 
+class Consumer(multiprocessing.Process):
+  def __init__(self, tq, rq):
+    multiprocessing.Process.__init__(self)
+    self.tqueue = tq
+    self.rqueue = rq
+
+  def run(self):
+    name = self.name
+    while True:
+      next_task = self.tqueue.get()
+      if next_task is None:
+        self.tqueue.task_done()
+        break
+      a = next_task()
+      self.tqueue.task_done()
+      self.rqueue.put(a)
+
 class Who(APIConnection):
-  def __init__(self):
+  def __init__(self, _type, _arg, _var, page=None, force=None):
     self._endpoint = "http://evewho.com/api.php"
     self._cache = {}
-    self._params = {}
-    self._threads = []
+    self._params = {'type': _type, _arg: _var, 'page':page}
     self.data = None
     APIConnection.__init__(self)
 
-  def __call__(self, _type, _arg, _var, page=None, force=None):
-    params = {'type': _type, _arg: _var, 'page': page}
-    if not (params == self._params and force is not True):
-      self._params = params
-      t = WhoQ(self._endpoint, params)
-      self.data = self.get(self._endpoint, params)
-      self._chkmem()
+  def __call__(self):
+    self.data = self.get(self._endpoint, self._params)
+    self._chkmem()
     return self.data
 
   def _chkmem(self):
+    print("Getting Pages")
     if self.data['info'].has_key('memberCount'):
       for i in range(1, (int(self.data['info']['memberCount']) / 200 + 1)):
         self._params['page'] = i
         r = self.get(self._endpoint, self._params)
         self.data['characters'] += r['characters']
 
-class WhoQ(threading.Thread):
-  def __init__(self, uri, params):
-    threading.Thread.__init__(self)
-    self.uri = uri
-    self.params = params
-
-  def run(self):
-    r = APIConnection.get(self.uri, params)
-    return r
+  def mul_call(self, joblist):
+    t = multiprocessing.JoinableQueue()
+    r = multiprocessing.Queue()
+    n_con = multiprocessing.cpu_count()
+    consumers = [ Consumer(t, r) for i in xrange(n_con) ]
+    ntasks = len(joblist)
+    for w in consumers:
+      w.start()
+    for job in joblist:
+      t.put(Who(job[0], job[1], job[2]))
+    # This is to kill Consumers
+    for i in xrange(n_con):
+      t.put(None)
+    t.join()
+    while ntasks:
+      result = r.get()
+      print result['info']['name']
+      ntasks -= 1
