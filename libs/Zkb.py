@@ -36,7 +36,18 @@ class Zkb(object):
       r.append(Killmail(kill))
     return r
 
-class Killmail(object):
+class items(object):
+  def __init__(self):
+    self.high = []
+    self.mid = []
+    self.low = []
+    self.cargo = []
+
+  def _populate(self, itemlist):
+    for item in itemlist:
+      
+
+class Killmail(items):
   def __init__(self, km):
     self.killID = km['killID']
     self.killTime = km['killTime']
