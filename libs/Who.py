@@ -6,7 +6,6 @@ import time
 import multiprocessing
 from urlparse import urlparse, urlunparse, parse_qsl
 
-logger = logging.getLogger("PyIntel.Who")
 cache_re = re.compile(r'max-age=([0-9]+)')
 
 class APIException(Exception):
@@ -27,6 +26,7 @@ class Cache(object):
 
 class APIConnection(object):
   def __init__(self, add_headers=None, user_agent=None):
+    """ Construct session. """
     ses = requests.Session()
     if not add_headers:
       add_headers = {}
@@ -41,21 +41,18 @@ class APIConnection(object):
     self.cache = Cache()
   
   def chkCache(self, asset, params):
+    """ Retreive cached assets if present. """
     key = (asset, 
         frozenset(self._ses.headers.items()), 
         frozenset(params.items()))
     cached = self.cache.get(key)
     if cached and cached['expires'] > time.time():
-      logger.debug('Match for asset %s (params=%s)', asset, params)
       return cached['payload']
     elif cached:
-      logger.debug('Expired state for asset %s (params=%s)', asset, params)
       self.cache.remove(key)
-    else:
-      logger.debug('Missing asset %s (params=%s)', asset, params)
 
   def get(self, asset, params=None):
-    logger.debug('Recieve asset %s' % (asset))
+    """ Get session request. If 200, return json and cache if needed. """
     if not params:
       params = {}
     parsed = urlparse(asset)
@@ -67,7 +64,6 @@ class APIConnection(object):
     for key in params:
       _vars[key] = params[key]
     self.chkCache(asset, _vars)
-    logger.debug('Recieveing asset %s (params=%s)', asset, _vars)
     r = self._ses.get(asset, params=_vars)
     if r.status_code != 200:
       raise APIException("Unexpected Status Code %s" % (r.status_code))
@@ -79,6 +75,7 @@ class APIConnection(object):
     return res
 
   def _get_exp(self, response):
+    """ Get experation for cache item."""
     if 'Cache-Control' not in response.headers:
       return 0
     if any([s in response.headers['Cache-Control'] for s in ['no-cache', 'no-store']]):
@@ -90,11 +87,13 @@ class APIConnection(object):
 
 class Consumer(multiprocessing.Process):
   def __init__(self, tq, rq):
+    """ Meta class for mul_call consumers. """
     multiprocessing.Process.__init__(self)
     self.tqueue = tq
     self.rqueue = rq
 
   def run(self):
+    """ Get and complete item from tqueue. """
     name = self.name
     while True:
       next_task = self.tqueue.get()
@@ -107,6 +106,7 @@ class Consumer(multiprocessing.Process):
 
 class InitClass(object):
   def __init__(self, a, b, c):
+    """ Metaclass for mul_call workers. Passed params. """
     self._type = a
     self._arg = b
     self._var = c
@@ -124,6 +124,13 @@ class Who(APIConnection):
     APIConnection.__init__(self)
 
   def __call__(self, _type, _arg, _var, page=None, force=None):
+    """Evewho lookup for Toons, Corps, Alliances.
+
+    Keyword arguments:
+    _type -- Type of lookup. (character, corp, corplist, alliance, allilist)
+    _arg -- Matching pattern. (name, id)
+    _var -- Pattern to be matched. (Tali Lyrae, 684719410)
+    """
     params = {'type': _type, _arg: _var, 'page': page}
     if params is not self._params or force is True:
       self._params = params
@@ -132,7 +139,7 @@ class Who(APIConnection):
     return self.data
 
   def _chkmem(self):
-    print("Getting Pages")
+    """ Check if corplist, alliance, > 200 members, get all if so."""
     if self.data['info'].has_key('memberCount'):
       for i in range(1, (int(self.data['info']['memberCount']) / 200 + 1)):
         self._params['page'] = i
@@ -140,6 +147,7 @@ class Who(APIConnection):
         self.data['characters'] += r['characters']
 
   def mul_call(self, joblist):
+    """ Takes list of Who().__call__, Place into queue, return all. """
     who = Who()
     t = multiprocessing.JoinableQueue()
     r = multiprocessing.Queue()
