@@ -105,17 +105,30 @@ class Consumer(multiprocessing.Process):
       self.tqueue.task_done()
       self.rqueue.put(a)
 
-class Who(APIConnection):
-  def __init__(self, _type, _arg, _var, page=None, force=None):
-    self._endpoint = "http://evewho.com/api.php"
-    self._cache = {}
-    self._params = {'type': _type, _arg: _var, 'page':page}
-    self.data = None
-    APIConnection.__init__(self)
+class InitClass(object):
+  def __init__(self, a, b, c):
+    self._type = a
+    self._arg = b
+    self._var = c
 
   def __call__(self):
-    self.data = self.get(self._endpoint, self._params)
-    self._chkmem()
+    who = Who()
+    return who(self._type, self._arg, self._var)
+
+class Who(APIConnection):
+  def __init__(self):
+    self._endpoint = "http://evewho.com/api.php"
+    self._cache = {}
+    self._params = None
+    self.data = {}
+    APIConnection.__init__(self)
+
+  def __call__(self, _type, _arg, _var, page=None, force=None):
+    params = {'type': _type, _arg: _var, 'page': page}
+    if params is not self._params or force is True:
+      self._params = params
+      self.data = self.get(self._endpoint, self._params)
+      self._chkmem()
     return self.data
 
   def _chkmem(self):
@@ -127,6 +140,7 @@ class Who(APIConnection):
         self.data['characters'] += r['characters']
 
   def mul_call(self, joblist):
+    who = Who()
     t = multiprocessing.JoinableQueue()
     r = multiprocessing.Queue()
     n_con = multiprocessing.cpu_count()
@@ -135,12 +149,14 @@ class Who(APIConnection):
     for w in consumers:
       w.start()
     for job in joblist:
-      t.put(Who(job[0], job[1], job[2]))
+      t.put(InitClass(job[0], job[1], job[2]))
     # This is to kill Consumers
     for i in xrange(n_con):
       t.put(None)
     t.join()
+    self.data = {}
     while ntasks:
       result = r.get()
-      print result['info']['name']
+      self.data[result['info']['name']] = result
       ntasks -= 1
+    return self.data
