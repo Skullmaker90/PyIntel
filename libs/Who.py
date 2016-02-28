@@ -4,11 +4,14 @@ import logging
 import re
 import time
 import multiprocessing
+from Logging import Log
 from urlparse import urlparse, urlunparse, parse_qsl
 
+logs = Log('Who')
 cache_re = re.compile(r'max-age=([0-9]+)')
 
 class APIException(Exception):
+  logs.warning('Exception Passed: %s' % (Exception))
   pass
 
 class Cache(object):
@@ -39,16 +42,18 @@ class APIConnection(object):
     ses.headers.update(add_headers)
     self._ses = ses
     self.cache = Cache()
-  
+
   def chkCache(self, asset, params):
     """ Retreive cached assets if present. """
-    key = (asset, 
+    key = (asset,
         frozenset(self._ses.headers.items()), 
         frozenset(params.items()))
     cached = self.cache.get(key)
     if cached and cached['expires'] > time.time():
+      logs.debug('Asset cached: %s, %s' % (asset, params))
       return cached['payload']
     elif cached:
+      logs.debug('Asset cached but expired: %s, %s' % (asset, params))
       self.cache.remove(key)
 
   def get(self, asset, params=None):
