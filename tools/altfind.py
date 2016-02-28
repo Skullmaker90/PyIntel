@@ -1,53 +1,31 @@
 import os
 import time
-import Who
+import libs.Who
+from libs.Logging import Log
 from datetime import datetime
 
-class _Dict(object):
-  def __init__(self):
-    self._data = {}
+def altfind(pilot_name):
+  search(pilot_name)
 
-  def _get(self, key):
-    return self._data[key]
+def search(pilot):
+  who = libs.Who.Who()
+  r = who('character', 'name', pilot)
+  pilot_history = r['history']
+  filtered_list = filter(filter_history, pilot_history)
+  time_set_list = map(set_timestamp, filtered_list)
+  joblist = map(get_joblist, time_set_list)
+  pos_altlist = who.mul_call(joblist)
 
-  def _set(self, key, value):
-    self._data[key] = value
+def set_timestamp(item):
+  _format = '%Y-%m-%d %H:%M:%S'
+  item['start_date'] = datetime.strptime(item['start_date'], _format)
+  if item['end_date'] is not None:
+   item['end_date'] = datetime.strptime(item['end_date'], _format)
+  return item
 
-  def _rm(self, key):
-    self._data.pop(key)
+def filter_history(corp):
+  return (int(corp['corporation_id'])) > 1000182
 
-class altfind(object):
-  def __init__(self):
-    self._info = _Dict()
-    self._history = []
-    self._tmp = []
-    self.who = Who.Who()
-    self.alts = _Dict()
-
-  def search(self, data):
-    self._populate(data)
-    self._filterhist()
-    self._itertime(self._history)
-    for corp in self._history:
-      self._tmp.append(self.who('corplist', 'id', corp['corporation_id']))
-
-  def _populate(self, data):
-    for k, v in data['info'].iteritems():
-      self._info._set(k, v)
-    self._history = data['history']
-
-  def _itertime(self, resource):
-    for item in resource:
-      for k, v in item.iteritems():
-        if (k == 'end_date' or k == 'start_date'):
-          item[k] = self._settime(v)
-
-  def _settime(self, source):
-    if source:
-      _format = '%Y-%m-%d %H:%M:%S'
-      return datetime.strptime(source, _format)
-
-  def _filterhist(self):
-    for corp in self._history:
-      if (int(corp['corporation_id']) < 1000182 and int(corp['corporation_id']) > 1000002):
-        self._history.remove(corp)
+def get_joblist(corpitem):
+  print corpitem
+  return ['corplist', 'id', int(corpitem['corporation_id'])] 
