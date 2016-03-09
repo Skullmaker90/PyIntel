@@ -156,7 +156,7 @@ class Who(APIConnection):
     who = Who()
     t = multiprocessing.JoinableQueue()
     r = multiprocessing.Queue()
-    n_con = multiprocessing.cpu_count()
+    n_con = multiprocessing.cpu_count() * 4
     consumers = [ Consumer(t, r) for i in xrange(n_con) ]
     ntasks = len(joblist)
     for w in consumers:
