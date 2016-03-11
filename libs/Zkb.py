@@ -31,29 +31,4 @@ class Zkb(object):
     url = self.build_url(moddict)
     headers = {'user-agent': 'https://init1.us/', 'Maintainer': 'Anthony Smith asmith@cari.net', 'Accept-Encoding': 'gzip'}
     res = requests.get(url).json()
-    r = []
-    for kill in res:
-      r.append(Killmail(kill))
-    return r
-
-class items(object):
-  def __init__(self):
-    self.high = []
-    self.mid = []
-    self.low = []
-    self.cargo = []
-
-  def _populate(self, itemlist):
-    for item in itemlist:
-      
-
-class Killmail(items):
-  def __init__(self, km):
-    self.killID = km['killID']
-    self.killTime = km['killTime']
-    self.zkb = km['zkb']
-    self.attackers = km['attackers']
-    self.victim = km['victim']
-    self.items = km['items']
-    self.solarSystemID = km['solarSystemID']
-    self.moonID = km['moonID']
+    return res
