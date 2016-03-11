@@ -1,9 +1,9 @@
-def getByAttrVal(self, objlist, attr, val):
+def getByAttrVal(objlist, attr, val):
 	matches = [getattr(obj, attr) == val for obj in objlist]
 	index = matches.index(True)
 	return objlist[index]
 
-def getAllItems(self, page):
+def getAllItems(page):
 	ret = page().items
 	while hasattr(page(), 'next'):
 		page = page().next()
