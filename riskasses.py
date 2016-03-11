@@ -9,7 +9,7 @@ log = libs.Logging.Log('Risk_log')
 zkb = libs.Zkb.Zkb()
 who = libs.Who.Who()
 
-def checkCyno(pilot):
+def check_cyno(pilot):
   cyno_ids = [21096, 28646]
   log.debug('Retriving pilot ID')
   pilot_id = int(who('character', 'name', pilot)['info']['character_id'])
