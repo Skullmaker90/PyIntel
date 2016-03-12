@@ -8,7 +8,8 @@ class Killmail(object):
     self.attackers = km['attackers']
     self.victim = km['victim']
     self.items = Items(km['items'])
-    self.position = km['position']
+    if km.has_key('position'):
+      self.position = km['position']
     self.solar_system_id = km['solarSystemID']
     self.moon_id = km['moonID']
 
