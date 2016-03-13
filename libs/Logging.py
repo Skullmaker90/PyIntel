@@ -5,6 +5,10 @@ class Log(object):
   def __init__(self, name):
     self.name = name
     self.path = '/programming/Python/PyIntel/logs/%s.log' % (self.name)
+    self.state = None
+
+  def set_log_state(self, state):
+    self.state = state
 
   def warning(self, *args):
     self.log('[Warning]', args)
@@ -19,11 +23,12 @@ class Log(object):
     self.log('[Critical]', args)
 
   def log(self, level, args):
-    try:
-      with open(self.path, 'a') as f:
-        for arg in args:
-          _str = datetime.today().strftime('%m.%d.%y %H:%M:%S') + ' ' + level +' :: ' + str(arg) + '\n'
-          f.write(_str)
-    except IOError:
-      os.system('touch %s' % (self.path))
-      self.log(level, args)
+    if self.state:
+      try:
+        with open(self.path, 'a') as f:
+          for arg in args:
+            _str = datetime.today().strftime('%m.%d.%y %H:%M:%S') + ' ' + level +' :: ' + str(arg) + '\n'
+            f.write(_str)
+      except IOError:
+        os.system('touch %s' % (self.path))
+        self.log(level, args)
