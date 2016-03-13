@@ -9,17 +9,36 @@ log = libs.Logging.Log('Risk_log')
 zkb = libs.Zkb.Zkb()
 who = libs.Who.Who()
 
-def check_cyno(name, limit=100):
-  log.debug('Retriving pilot ID')
-  pilot_id = int(who('character', 'name', name)['info']['character_id'])
-  log.debug('Retrieving Losslist.')
-  pilot_loss_list = zkb.query(fmod = ['characterID', pilot_id],
+def set_log_state(state):
+  log.set_log_state(state)
+
+class Pilot(object):
+  def __init__(self):
+    self.data = {}
+
+  def put(self, key, item):
+    self.data[key] = item
+
+  def get(self, key):
+    return self.data[key]
+
+  def pop(self, key):
+    return self.data.pop(key)
+
+def check_cyno(pilot, limit=100):
+  log.info('Storing pilot name/limit: %s/%s' % (pilot.get('name'), limit))
+  log.info('Retriving pilot ID')
+  pid = int(who('character', 'name', pilot.get('name'))['info']['character_id'])
+  pilot.put('id', pid)
+  log.info('Retrieving Losslist.')
+  loss_list = zkb.query(fmod = ['characterID', pilot.get('id')],
                             ftypemod = ['losses'],
                             ptlmod = ['limit', limit])
-  log.debug('Mapping Km build_objects.')
-  pilot_loss_list = map(build_object, pilot_loss_list)
-  log.debug('Map complete, Returning filter result.')
-  return filter(itemid_comp, pilot_loss_list)
+  log.info('Mapping Km build_objects.')
+  loss_obj_list = map(build_object, loss_list)
+  pilot.put('losses', loss_obj_list)
+  log.info('Map complete, Returning filter result.')
+  return filter(itemid_comp, loss_obj_list)
 
 def build_object(km):
   return libs.Km.Killmail(km)
@@ -35,11 +54,10 @@ def itemid_comp(kmobj):
       is_cyno = True
   return is_cyno
 
-def check_doctorine(name):
-  pilot_id = int(who('character', 'name', pilot)['info']['character_id'])
+def check_doctorine():
+  pass
 
-  def compare_items(kmobj):
-    key_match = ['highs', 'mids', 'lows']
-    for k, v in kmobj.items():
-      if key_match.count(k) == 1:
-        pass
+def main(name):
+  pilot = Pilot()
+  pilot.put('name', name)
+  return pilot
