@@ -29,6 +29,6 @@ class Zkb(object):
   def query(self, ptlmod=None, ftypemod=None, omod=None, fmod=None, imod=None):
     moddict = {'ptlmod': ptlmod, 'ftypemod': ftypemod, 'omod': omod, 'fmod':fmod}
     url = self.build_url(moddict)
-    headers = {'user-agent': 'https://init1.us/', 'Maintainer': 'Anthony Smith asmith@cari.net', 'Accept-Encoding': 'gzip'}
+    headers = {'user-agent': 'https://init1.us/', 'Maintainer': 'Anthony Smith asmith@init1.us', 'Accept-Encoding': 'gzip'}
     res = requests.get(url).json()
     return res
